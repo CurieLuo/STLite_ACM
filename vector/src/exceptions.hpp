@@ -1,6 +1,7 @@
 #ifndef SJTU_EXCEPTIONS_HPP
 #define SJTU_EXCEPTIONS_HPP
 
+// #include <cassert>
 #include <cstddef>
 #include <cstring>
 #include <string>
@@ -9,31 +10,30 @@ namespace sjtu {
 
 class exception {
 protected:
-	const std::string variant = "";
-	std::string detail = "";
+  const std::string variant = "";
+  std::string detail = "";
+
 public:
-	exception() {}
-	exception(const exception &ec) : variant(ec.variant), detail(ec.detail) {}
-	virtual std::string what() {
-		return variant + " " + detail;
-	}
+  exception() {}
+  exception(const exception &ec) : variant(ec.variant), detail(ec.detail) {}
+  virtual std::string what() { return variant + " " + detail; }
 };
 
 class index_out_of_bound : public exception {
-	/* __________________________ */
+  /* __________________________ */
 };
 
 class runtime_error : public exception {
-	/* __________________________ */
+  /* __________________________ */
 };
 
 class invalid_iterator : public exception {
-	/* __________________________ */
+  /* __________________________ */
 };
 
 class container_is_empty : public exception {
-	/* __________________________ */
+  /* __________________________ */
 };
-}
+} // namespace sjtu
 
 #endif

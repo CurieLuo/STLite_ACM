@@ -1,8 +1,8 @@
 //provided by ivy
 
-#include "vector.hpp"
-#include "class-matrix.hpp"
-#include "class-bint.hpp"
+#include "src/vector.hpp"
+#include "data/class-matrix.hpp"
+#include "data/class-bint.hpp"
 #include <iostream>
 
 void complex_test()
