@@ -1,3 +1,0 @@
-/mnt/d/STLite_ACM/vector/CMakeFiles/test.dir
-/mnt/d/STLite_ACM/vector/CMakeFiles/edit_cache.dir
-/mnt/d/STLite_ACM/vector/CMakeFiles/rebuild_cache.dir
