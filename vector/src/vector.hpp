@@ -13,35 +13,36 @@ namespace sjtu {
  * store data in a successive memory and support random access.
  */
 template <typename T> class vector {
-  T *arr;     // array
-  size_t siz; // size
-  size_t cap; // capacity
+private:
+  T *arr;                  // array
+  size_t siz;              // size
+  size_t cap;              // capacity
+  std::allocator<T> alloc; // allocator
 
   /**
    * @brief expand to fit more elements
    */
   void expand() {
     if (siz >= cap) {
-      cap = siz * 2 + 2;
-      T *p = (T *)malloc(sizeof(T) * cap);
+      size_t newcap = siz * 1.5 + 3;
+      T *p = alloc.allocate(newcap);
       // copy
-      for (int i = 0; i < siz; i++) {
-        new (p + i) T(arr[i]);
+      for (size_t i = 0; i < siz; i++) {
+        alloc.construct(p + i, arr[i]);
       }
-      // std::cerr << sizeof(T) << ' ' << siz << ' ' << cap << std::endl;
       if (arr != nullptr) {
-        for (int i = 0; i < siz; i++) {
-          arr[i].~T();
+        for (size_t i = 0; i < siz; i++) {
+          alloc.destroy(arr + i);
         }
-        free(arr);
+        alloc.deallocate(arr, cap);
       }
       arr = p;
+      cap = newcap;
     }
   }
 
 public:
   /**
-   * TODO
    * a type for actions of the elements of a vector, and you should write
    *   a class named const_iterator with same interfaces.
    */
@@ -72,8 +73,7 @@ public:
 
   private:
     /**
-     * TODO add data members
-     *   just add whatever you want.
+     * data members
      */
     T *beg, *ptr;
     // beg is for judging whether two iterators point to the same vector
@@ -82,7 +82,7 @@ public:
     iterator(T *b, T *p) : beg(b), ptr(p) {} //! How to get rid of this?
     iterator() : beg(nullptr), ptr(nullptr) {}
     /**
-     * return a new iterator which pointer n-next elements
+     * return a new iterator which points to the nth next element
      * as well as operator-
      */
     iterator operator+(const int &n) const {
@@ -154,8 +154,7 @@ public:
     bool operator!=(const const_iterator &rhs) const { return ptr != rhs.ptr; }
   }; // class iterator
   /**
-   * TODO
-   * has same function as iterator, just for a const object.
+   * has the same function as iterator, just for a const object.
    */
   class const_iterator {
   public:
@@ -167,14 +166,13 @@ public:
 
   private:
     /**
-     * TODO add data members
-     *   just add whatever you want.
+     * data members
      */
     T *beg, *ptr;
     // beg is for judging whether two iterators point to the same vector
 
   public:
-    const_iterator(T *b, T *p) : beg(b), ptr(p) {} //! How to get rid of this?
+    const_iterator(T *b, T *p) : beg(b), ptr(p) {}
     const_iterator() : beg(nullptr), ptr(nullptr) {}
     /**
      * return a new iterator which pointer n-next elements
@@ -254,39 +252,39 @@ public:
    */
   vector() : arr(nullptr), siz(0), cap(0) {}
   vector(const vector &other) : siz(other.siz), cap(other.cap) {
-    arr = (T *)malloc(sizeof(T) * cap);
+    arr = alloc.allocate(cap);
     // copy
-    for (int i = 0; i < siz; i++) {
-      new (arr + i) T(other.arr[i]);
+    for (size_t i = 0; i < siz; i++) {
+      alloc.construct(arr + i, other.arr[i]);
     }
   }
   /**
-   * TODO Destructor
+   * Destructor
    */
   ~vector() {
-    for (int i = 0; i < siz; i++) {
-      arr[i].~T();
+    for (size_t i = 0; i < siz; i++) {
+      alloc.destroy(arr + i);
     }
-    free(arr);
+    alloc.deallocate(arr, cap);
     arr = nullptr;
     siz = cap = 0;
   }
   /**
-   * TODO Assignment operator
+   * Assignment operator
    */
   vector &operator=(const vector &other) {
     if (this == &other) {
       return *this;
     }
-    for (int i = 0; i < siz; i++) {
-      arr[i].~T();
+    for (size_t i = 0; i < siz; i++) {
+      alloc.destroy(arr + i);
     }
-    free(arr);
+    alloc.deallocate(arr, cap);
     siz = other.siz, cap = other.cap;
-    arr = (T *)malloc(sizeof(T) * cap);
+    arr = alloc.allocate(cap);
     // copy
-    for (int i = 0; i < siz; i++) {
-      new (arr + i) T(other.arr[i]);
+    for (size_t i = 0; i < siz; i++) {
+      alloc.construct(arr + i, other.arr[i]);
     }
     return *this;
   }
@@ -309,7 +307,6 @@ public:
   /**
    * assigns specified element with bounds checking
    * throw index_out_of_bound if pos is not in [0, size)
-   * !!! Pay attention
    *   In STL this operator does not check the boundary but I want you to do so.
    */
   T &operator[](const size_t &pos) {
@@ -366,10 +363,10 @@ public:
    * clears the contents
    */
   void clear() {
-    for (int i = 0; i < siz; i++) {
-      arr[i].~T();
+    for (size_t i = 0; i < siz; i++) {
+      alloc.destroy(arr + i);
     }
-    free(arr);
+    alloc.deallocate(arr, cap);
     arr = nullptr;
     siz = cap = 0;
   }
@@ -397,9 +394,9 @@ public:
     }
     expand();
     for (size_t i = siz++; i > ind; i--) {
-      new (arr + i) T(arr[i - 1]);
+      alloc.construct(arr + i, arr[i - 1]); // use copy constructor
     }
-    new (arr + ind) T(value);
+    alloc.construct(arr + ind, value);
     return begin() + ind;
   }
   /**
@@ -411,7 +408,7 @@ public:
   iterator erase(iterator pos) {
     int ind = pos - begin();
     if (ind < 0 || ind >= siz) {
-      throw invalid_iterator(); //? what error?
+      throw invalid_iterator(); //!? what error?
     };
     return erase(ind);
   }
@@ -428,7 +425,7 @@ public:
     for (size_t i = ind; i < siz; i++) {
       arr[i] = arr[i + 1];
     }
-    arr[siz].~T();
+    alloc.destroy(arr + siz);
     return begin() + ind;
   }
   /**
@@ -436,7 +433,8 @@ public:
    */
   void push_back(const T &value) {
     expand();
-    new (arr + siz++) T(value); // placement new
+    alloc.construct(arr + siz++, value);
+    // must call copy constructor, otherwise the object may be uninitialized
   }
   /**
    * remove the last element from the end.
@@ -446,7 +444,7 @@ public:
     if (!siz) {
       throw container_is_empty();
     }
-    arr[--siz].~T();
+    alloc.destroy(arr + (--siz));
   }
 }; // class vector
 
